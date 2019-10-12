@@ -20,7 +20,7 @@ import (
 	"achievement-system/account"
 )
 
-const dbsource = "postgresql://postgres:postgres@localhost:5432/gokitexample?sslmode=disable"
+const dbsource = "postgresql://postgres:postgres@db:5432/postgres?sslmode=disable"
 
 func main() {
 	var httpAddr = flag.String("http", ":8080", "http listen address")
