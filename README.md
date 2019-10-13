@@ -19,5 +19,6 @@ debug
 
 - Player -> getAllByGame
 - Data form of end game
+- How do we create and merge the data from Endgame and generated Statistiques ? (map[string]interface{} seems to be the easier way)
 - How to extend our conditions map
 - Add config file
