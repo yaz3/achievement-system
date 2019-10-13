@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	Integer int = iota
+	Integer int = iota + 1
 	Float
 	Boolean
 	String
@@ -26,7 +26,7 @@ const (
 type Expression struct {
 	AchievementName      string
 	ExpressionToEvaluate string
-	Typ                  int
+	Type                 int
 	Evaluable            gval.Evaluable
 }
 
@@ -113,7 +113,7 @@ func ConvertTyp(typ int, data interface{}) interface{} {
 //ExecuteExpression ...
 func (expression Expression) ExecuteExpression(data map[string]interface{}) (interface{}, error) {
 	background := context.Background()
-	switch expression.Typ {
+	switch expression.Type {
 	case Integer:
 		res, err := expression.Evaluable.EvalInt(background, data)
 		return res, err
