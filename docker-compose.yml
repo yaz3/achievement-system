@@ -1,21 +1,21 @@
 version: '3'
 services:
-  app:
-    build: .
-    command: ["./wait-for-it.sh", "db:5432", "--"]
-    volumes:
-      - .:/go/src/app
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
     ports:
-      - "8080:8080"
+      - 5432:5432
+  app:
+    image: achievements-system
+    ports:
+    - "8080:8080"
+    restart: always
+    command: ['./wait-for-it.sh', 'db:5432', '--', './main']
+    ports:
+      - '8080:8080'
     depends_on:
       - db
     links:
       - db
-  db:
-    image: postgres
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - 5432:5432
