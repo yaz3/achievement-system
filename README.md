@@ -1,4 +1,4 @@
-### Dockerfile and docker-compose
+### Achievements system Osmo
 
 - copy up app
 - build app
@@ -13,3 +13,11 @@ From inside directory:
 debug
 - `docker-compose up -d`
 - `docker-compose logs -f -t`
+
+
+#### Todo list:
+
+- Player -> getAllByGame
+- Data form of end game
+- How to extend our conditions map
+- Add config file
