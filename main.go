@@ -1,79 +1,73 @@
+// main.go
 package main
 
 import (
-	"context"
-	"database/sql"
-	"flag"
+	"encoding/json"
 	"fmt"
-
-	_ "github.com/lib/pq"
-
-	"github.com/go-kit/kit/log"
-
-	"github.com/go-kit/kit/log/level"
-
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"achievement-system/account"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
-const dbsource = "postgresql://postgres:postgres@db:5432/postgres?sslmode=disable"
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = "postgres"
+	dbname   = "postgres"
+)
 
 func main() {
-	var httpAddr = flag.String("http", ":8080", "http listen address")
-	var logger log.Logger
-	{
-		logger = log.NewLogfmtLogger(os.Stderr)
-		logger = log.NewSyncLogger(logger)
-		logger = log.With(logger,
-			"service", "account",
-			"time:", log.DefaultTimestampUTC,
-			"caller", log.DefaultCaller,
-		)
+
+	connStr := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
+	db, err := sqlx.Open("postgres", connStr)
+
+	if err = db.Ping(); err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Printf("postgres connected :: %#v \n", connStr)
 	}
 
-	level.Info(logger).Log("msg", "service started")
-	defer level.Info(logger).Log("msg", "service ended")
+	r := mux.NewRouter()
 
-	var db *sql.DB
-	{
-		var err error
-
-		db, err = sql.Open("postgres", dbsource)
-		if err != nil {
-			level.Error(logger).Log("exit", err)
-			os.Exit(-1)
-		}
-
+	server := &http.Server{
+		Addr: ":8080",
 	}
 
-	flag.Parse()
-	ctx := context.Background()
-	var srv account.Service
-	{
-		repository := account.NewRepo(db, logger)
+	r.HandleFunc("/", hello)
+	http.Handle("/", r)
 
-		srv = account.NewService(repository, logger)
+	fmt.Printf("starting server :: %#v \n", server.Addr)
+
+	http.ListenAndServe(":8080", handlers.LoggingHandler(os.Stdout, r))
+
+}
+
+func hello(w http.ResponseWriter, _ *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	payload := struct {
+		Status  string `json:"status"`
+		Message string `json:"message"`
+	}{
+		Status:  "success",
+		Message: "Hello world!",
 	}
 
-	errs := make(chan error)
+	response, err := json.Marshal(payload)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
+	w.Write(response)
 
-	endpoints := account.MakeEndpoints(srv)
-
-	go func() {
-		fmt.Println("listening on port", *httpAddr)
-		handler := account.NewHTTPServer(ctx, endpoints)
-		errs <- http.ListenAndServe(*httpAddr, handler)
-	}()
-
-	level.Error(logger).Log("exit", <-errs)
 }

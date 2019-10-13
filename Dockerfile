@@ -1,20 +1,16 @@
-FROM golang:1.12
+FROM golang:1.12 AS builder
 
-RUN mkdir -p /go/src/achievement-system
-WORKDIR /go/src/achievement-system
+ENV GO111MODULE=on
 
-ADD . /go/src/achievement-system
+WORKDIR /app
 
+COPY go.mod .
+RUN go mod download
 
-#RUN go mod init achievement-system
-#RUN go mod vendor
+COPY . .
 
-RUN GO111MODULE=on go mod download
-RUN GO111MODULE=on go get ./...
-
-RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux go build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main
 
 EXPOSE 8080
 
-# Command to run the executable
-ENTRYPOINT [ "./achievement-system" ]
+ENTRYPOINT ["./main"]
